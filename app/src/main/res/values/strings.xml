@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Expense Tracker</string>
+    <string name="total_expenses">Total Expenses</string>
+    <string name="add_expense">Add Expense</string>
+    <string name="amount">Amount</string>
+    <string name="category">Category</string>
+    <string name="date">Date</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="categories">Categories</string>
+    <string name="recent_expenses">Recent Expenses</string>
+    <string name="add_category">Add Category</string>
+    <string name="category_name">Category Name</string>
+    <string name="monthly_budget">Monthly Budget</string>
+    <string name="amount_format">$%.2f</string>
+    <string name="note">Note</string>
+    <string name="budget_format">Budget: $%.2f</string>
+</resources>
