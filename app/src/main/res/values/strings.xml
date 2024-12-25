@@ -16,4 +16,6 @@
     <string name="note">Note</string>
     <string name="budget_format">Budget: $%.2f</string>
     <string name="invalid_category_input">Please enter valid category name and budget</string>
+    <string name="monthly_expenses">Monthly Expenses</string>
+    <string name="close">Close</string>
 </resources>

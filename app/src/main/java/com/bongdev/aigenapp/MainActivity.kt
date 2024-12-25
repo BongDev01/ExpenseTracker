@@ -34,6 +34,15 @@ import android.view.LayoutInflater
 import android.widget.ImageView
 import android.widget.TextView
 import android.view.ViewGroup
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.recyclerview.widget.RecyclerView
+import com.bongdev.aigenapp.ui.DailyExpense
+import com.bongdev.aigenapp.ui.DailyExpenseAdapter
+import com.google.android.material.datepicker.MaterialDatePicker
+import java.util.Calendar
+import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -88,6 +97,11 @@ class MainActivity : AppCompatActivity() {
         // Initialize with 0
         updateTotalAmount(0.0)
         binding.monthlyProgressIndicator.progress = 0
+
+        // Add click listener to total amount card
+        binding.totalAmountCard.setOnClickListener {
+            showDailyExpensesDialog()
+        }
     }
 
     private fun toggleFabMenu() {
@@ -200,9 +214,9 @@ class MainActivity : AppCompatActivity() {
             .start()
 
         // Animate FAB
-        binding.addExpenseFab.scaleX = 0f
-        binding.addExpenseFab.scaleY = 0f
-        binding.addExpenseFab.animate()
+        binding.mainFab.scaleX = 0f
+        binding.mainFab.scaleY = 0f
+        binding.mainFab.animate()
             .scaleX(1f)
             .scaleY(1f)
             .setDuration(duration)
@@ -248,16 +262,40 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun showAddExpenseDialog() {
+    private fun showAddExpenseDialog(selectedDate: Date? = null) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_expense, null)
         val amountInput = dialogView.findViewById<TextInputEditText>(R.id.amountInput)
         val noteInput = dialogView.findViewById<TextInputEditText>(R.id.noteInput)
         val categorySpinner = dialogView.findViewById<AutoCompleteTextView>(R.id.categorySpinner)
+        val dateInput = dialogView.findViewById<TextInputEditText>(R.id.dateInput)
+
+        // Set up date picker
+        val calendar = Calendar.getInstance()
+        if (selectedDate != null) {
+            calendar.time = selectedDate
+        }
+        
+        val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        dateInput.setText(dateFormat.format(calendar.time))
+
+        dateInput.setOnClickListener {
+            val datePicker = MaterialDatePicker.Builder.datePicker()
+                .setSelection(calendar.timeInMillis)
+                .setTitleText("Select date")
+                .build()
+
+            datePicker.addOnPositiveButtonClickListener { selection ->
+                calendar.timeInMillis = selection
+                dateInput.setText(dateFormat.format(calendar.time))
+            }
+
+            datePicker.show(supportFragmentManager, "date_picker")
+        }
 
         // Get unique categories
         val uniqueCategories = viewModel.categoriesWithExpenses.value
             .distinctBy { it.category.id }
-            .sortedBy { it.category.name }  // Sort categories by name
+            .sortedBy { it.category.name }
 
         val categoryNames = uniqueCategories.map { it.category.name }
         val arrayAdapter = ArrayAdapter(this, R.layout.item_dropdown, categoryNames)
@@ -276,10 +314,9 @@ class MainActivity : AppCompatActivity() {
                 val categoryName = categorySpinner.text.toString()
 
                 if (amount > 0 && categoryName.isNotEmpty()) {
-                    // Find category from unique categories list
                     val category = uniqueCategories.find { it.category.name == categoryName }?.category
                     if (category != null) {
-                        viewModel.addExpense(amount, category.id, note)
+                        viewModel.addExpense(amount, category.id, note, calendar.time)
                     }
                 }
             }
@@ -311,6 +348,81 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showDailyExpensesDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_daily_expenses, null)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.dailyExpensesRecyclerView)
+        val monthText = dialogView.findViewById<TextView>(R.id.currentMonthText)
+        val prevMonthButton = dialogView.findViewById<MaterialButton>(R.id.prevMonthButton)
+        val nextMonthButton = dialogView.findViewById<MaterialButton>(R.id.nextMonthButton)
+        
+        val calendar = Calendar.getInstance()
+        val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        
+        // Initialize adapter before using it
+        val dailyExpenseAdapter = DailyExpenseAdapter { date ->
+            showAddExpenseDialog(date)
+        }
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = dailyExpenseAdapter
+
+        fun updateMonthDisplay() {
+            monthText.text = monthFormat.format(calendar.time)
+            
+            // Get first and last day of selected month
+            val firstDay = calendar.clone() as Calendar
+            firstDay.set(Calendar.DAY_OF_MONTH, 1)
+            val lastDay = calendar.clone() as Calendar
+            lastDay.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+            lastDay.set(Calendar.HOUR_OF_DAY, 23)
+            lastDay.set(Calendar.MINUTE, 59)
+            lastDay.set(Calendar.SECOND, 59)
+
+            // Filter expenses for selected month
+            val monthlyExpenses = viewModel.categoriesWithExpenses.value
+                .flatMap { it.expenses }
+                .filter { expense -> 
+                    expense.date in firstDay.time..lastDay.time
+                }
+                .groupBy { expense -> 
+                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        .format(expense.date)
+                }
+                .map { (date, expenses) ->
+                    DailyExpense(
+                        date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)!!,
+                        totalAmount = expenses.sumOf { it.amount },
+                        expenses = expenses
+                    )
+                }
+                .sortedByDescending { it.date }
+
+            dailyExpenseAdapter.submitList(monthlyExpenses)
+
+            // Show total for the month
+            val monthlyTotal = monthlyExpenses.sumOf { it.totalAmount }
+            dialogView.findViewById<TextView>(R.id.monthlyTotalText).text = 
+                getString(R.string.amount_format, monthlyTotal.toFloat())
+        }
+
+        prevMonthButton.setOnClickListener {
+            calendar.add(Calendar.MONTH, -1)
+            updateMonthDisplay()
+        }
+
+        nextMonthButton.setOnClickListener {
+            calendar.add(Calendar.MONTH, 1)
+            updateMonthDisplay()
+        }
+
+        updateMonthDisplay()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.monthly_expenses)
+            .setView(dialogView)
+            .setPositiveButton(R.string.close, null)
             .show()
     }
 }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: ExpenseRepository
@@ -60,12 +61,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addExpense(amount: Double, categoryId: Long, note: String?) {
+    fun addExpense(amount: Double, categoryId: Long, note: String?, date: Date = Date()) {
         viewModelScope.launch {
             val expense = Expense(
                 amount = amount,
                 categoryId = categoryId,
-                note = note
+                note = note,
+                date = date
             )
             repository.insertExpense(expense)
         }

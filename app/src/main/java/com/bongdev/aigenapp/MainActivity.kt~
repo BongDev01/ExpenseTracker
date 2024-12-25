@@ -34,6 +34,13 @@ import android.view.LayoutInflater
 import android.widget.ImageView
 import android.widget.TextView
 import android.view.ViewGroup
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.recyclerview.widget.RecyclerView
+import com.bongdev.aigenapp.ui.DailyExpense
+import com.bongdev.aigenapp.ui.DailyExpenseAdapter
+import com.google.android.material.datepicker.MaterialDatePicker
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -88,6 +95,11 @@ class MainActivity : AppCompatActivity() {
         // Initialize with 0
         updateTotalAmount(0.0)
         binding.monthlyProgressIndicator.progress = 0
+
+        // Add click listener to total amount card
+        binding.totalAmountCard.setOnClickListener {
+            showDailyExpensesDialog()
+        }
     }
 
     private fun toggleFabMenu() {
@@ -200,9 +212,9 @@ class MainActivity : AppCompatActivity() {
             .start()
 
         // Animate FAB
-        binding.addExpenseFab.scaleX = 0f
-        binding.addExpenseFab.scaleY = 0f
-        binding.addExpenseFab.animate()
+        binding.mainFab.scaleX = 0f
+        binding.mainFab.scaleY = 0f
+        binding.mainFab.animate()
             .scaleX(1f)
             .scaleY(1f)
             .setDuration(duration)
@@ -248,16 +260,40 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun showAddExpenseDialog() {
+    private fun showAddExpenseDialog(selectedDate: Date? = null) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_expense, null)
         val amountInput = dialogView.findViewById<TextInputEditText>(R.id.amountInput)
         val noteInput = dialogView.findViewById<TextInputEditText>(R.id.noteInput)
         val categorySpinner = dialogView.findViewById<AutoCompleteTextView>(R.id.categorySpinner)
+        val dateInput = dialogView.findViewById<TextInputEditText>(R.id.dateInput)
+
+        // Set up date picker
+        val calendar = Calendar.getInstance()
+        if (selectedDate != null) {
+            calendar.time = selectedDate
+        }
+        
+        val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        dateInput.setText(dateFormat.format(calendar.time))
+
+        dateInput.setOnClickListener {
+            val datePicker = MaterialDatePicker.Builder.datePicker()
+                .setSelection(calendar.timeInMillis)
+                .setTitleText("Select date")
+                .build()
+
+            datePicker.addOnPositiveButtonClickListener { selection ->
+                calendar.timeInMillis = selection
+                dateInput.setText(dateFormat.format(calendar.time))
+            }
+
+            datePicker.show(supportFragmentManager, "date_picker")
+        }
 
         // Get unique categories
         val uniqueCategories = viewModel.categoriesWithExpenses.value
             .distinctBy { it.category.id }
-            .sortedBy { it.category.name }  // Sort categories by name
+            .sortedBy { it.category.name }
 
         val categoryNames = uniqueCategories.map { it.category.name }
         val arrayAdapter = ArrayAdapter(this, R.layout.item_dropdown, categoryNames)
@@ -276,10 +312,9 @@ class MainActivity : AppCompatActivity() {
                 val categoryName = categorySpinner.text.toString()
 
                 if (amount > 0 && categoryName.isNotEmpty()) {
-                    // Find category from unique categories list
                     val category = uniqueCategories.find { it.category.name == categoryName }?.category
                     if (category != null) {
-                        viewModel.addExpense(amount, category.id, note)
+                        viewModel.addExpense(amount, category.id, note, calendar.time)
                     }
                 }
             }
@@ -291,83 +326,6 @@ class MainActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_category, null)
         val nameInput = dialogView.findViewById<TextInputEditText>(R.id.categoryNameInput)
         val budgetInput = dialogView.findViewById<TextInputEditText>(R.id.budgetInput)
-        val iconSpinner = dialogView.findViewById<AutoCompleteTextView>(R.id.iconSpinner)
-
-        // Get all drawable resources
-        data class IconItem(val name: String, val iconResId: Int)
-        val icons = mutableListOf<IconItem>()
-
-        // Function to get resource ID safely
-        fun getDrawableResourceId(name: String): Int {
-            return resources.getIdentifier(name, "drawable", packageName)
-        }
-
-        // Get all drawable resources from R.drawable
-        val drawableFields = R.drawable::class.java.fields
-        for (field in drawableFields) {
-            try {
-                val resourceId = field.getInt(null)
-                val resourceName = resources.getResourceEntryName(resourceId)
-                // Include all PNG files and vector drawables
-                if (resourceName.endsWith(".png") || 
-                    resourceName.startsWith("ic_") || 
-                    resourceName.startsWith("category_") ||
-                    resourceName.contains("menu") ||
-                    resourceName.contains("diet")) {
-                    // Convert resource name to display name
-                    val displayName = resourceName
-                        .removeSuffix(".png")
-                        .replace("ic_", "")
-                        .replace("category_", "")
-                        .split("_")
-                        .joinToString(" ") { it.capitalize() }
-                    icons.add(IconItem(displayName, resourceId))
-                }
-            } catch (e: Exception) {
-                // Skip if resource can't be loaded
-                continue
-            }
-        }
-
-        // Sort icons by name
-        icons.sortBy { it.name }
-
-        // Create adapter for icon spinner
-        class IconAdapter(context: Context, items: List<IconItem>) : 
-            ArrayAdapter<IconItem>(context, R.layout.item_icon_spinner, items) {
-            
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: LayoutInflater.from(context)
-                    .inflate(R.layout.item_icon_spinner, parent, false)
-                
-                val item = getItem(position)
-                val iconView = view.findViewById<ImageView>(R.id.iconView)
-                val nameView = view.findViewById<TextView>(R.id.iconName)
-
-                item?.let {
-                    try {
-                        iconView.setImageResource(it.iconResId)
-                        nameView.text = it.name
-                    } catch (e: Exception) {
-                        // Fallback to default icon if loading fails
-                        iconView.setImageResource(R.drawable.ic_custom_category)
-                        nameView.text = it.name
-                    }
-                }
-                
-                return view
-            }
-
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                return getView(position, convertView, parent)
-            }
-        }
-
-        val iconAdapter = IconAdapter(this, icons)
-        iconSpinner.setAdapter(iconAdapter)
-        if (icons.isNotEmpty()) {
-            iconSpinner.setText(icons[0].name, false)
-        }
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.add_category)
@@ -375,14 +333,11 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(R.string.save) { _, _ ->
                 val name = nameInput.text.toString().trim()
                 val budget = budgetInput.text.toString().toDoubleOrNull() ?: 0.0
-                val selectedIconName = iconSpinner.text.toString()
-                val selectedIcon = icons.find { it.name == selectedIconName }?.iconResId 
-                    ?: R.drawable.ic_custom_category
 
                 if (name.isNotEmpty() && budget > 0) {
                     viewModel.addCategory(
                         name = name,
-                        iconResId = selectedIcon,
+                        iconResId = R.drawable.ic_custom_category,
                         colorResId = R.color.primary_container,
                         budget = budget
                     )
@@ -391,6 +346,46 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showDailyExpensesDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_daily_expenses, null)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.dailyExpensesRecyclerView)
+        val monthText = dialogView.findViewById<TextView>(R.id.currentMonthText)
+        
+        // Set current month
+        val currentMonth = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date())
+        monthText.text = currentMonth
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        val dailyExpenseAdapter = DailyExpenseAdapter { date ->
+            showAddExpenseDialog(date)
+        }
+        recyclerView.adapter = dailyExpenseAdapter
+
+        // Group expenses by date
+        val dailyExpenses = viewModel.categoriesWithExpenses.value
+            .flatMap { it.expenses }
+            .groupBy { expense -> 
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    .format(expense.date)
+            }
+            .map { (date, expenses) ->
+                DailyExpense(
+                    date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)!!,
+                    totalAmount = expenses.sumOf { it.amount },
+                    expenses = expenses
+                )
+            }
+            .sortedByDescending { it.date }
+
+        dailyExpenseAdapter.submitList(dailyExpenses)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Daily Expenses")
+            .setView(dialogView)
+            .setPositiveButton("Close", null)
             .show()
     }
 }

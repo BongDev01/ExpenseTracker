@@ -8,13 +8,14 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/amount">
+        android:hint="Date">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/amountInput"
+            android:id="@+id/dateInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal" />
+            android:focusable="false"
+            android:clickable="true"/>
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -22,14 +23,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:hint="@string/note">
+        android:hint="Amount">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/noteInput"
+            android:id="@+id/amountInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:maxLines="3" />
+            android:inputType="numberDecimal"/>
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -38,13 +38,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:hint="@string/category">
+        android:hint="Category">
 
         <AutoCompleteTextView
             android:id="@+id/categorySpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="none" />
+            android:inputType="none"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Note (Optional)">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/noteInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
     </com.google.android.material.textfield.TextInputLayout>
 
