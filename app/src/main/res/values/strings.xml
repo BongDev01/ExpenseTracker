@@ -15,4 +15,5 @@
     <string name="amount_format">$%.2f</string>
     <string name="note">Note</string>
     <string name="budget_format">Budget: $%.2f</string>
+    <string name="invalid_category_input">Please enter valid category name and budget</string>
 </resources>
