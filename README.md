@@ -22,4 +22,4 @@ A simple yet powerful Expense Tracker app built with Kotlin, Room Database, and 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/expense-tracker-app.git
+   git clone https://github.com/BongDev01/ExpenseTracker.git
