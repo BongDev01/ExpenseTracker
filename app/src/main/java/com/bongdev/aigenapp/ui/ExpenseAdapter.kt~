@@ -18,7 +18,7 @@ class ExpenseAdapter : ListAdapter<Expense, ExpenseAdapter.ExpenseViewHolder>(Di
         RecyclerView.ViewHolder(binding.root) {
         
         fun bind(expense: Expense, dateFormat: SimpleDateFormat) {
-            binding.expenseAmount.text = String.format("₹%.2f", expense.amount)
+            binding.expenseAmount.text = String.format("$%.2f", expense.amount)
             binding.expenseNote.text = expense.note ?: ""
             binding.expenseDate.text = dateFormat.format(expense.date)
         }

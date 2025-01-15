@@ -88,7 +88,7 @@ class CategoryDetailActivity : AppCompatActivity() {
             
             // Update category icon and color
             categoryIcon.setImageResource(categoryWithExpenses.category.iconResId)
-            categoryIcon.setColorFilter(getColor(categoryWithExpenses.category.colorResId))
+//            categoryIcon.setColorFilter(getColor(categoryWithExpenses.category.colorResId))
             
             // Update amounts with animation
             animateAmount(totalAmountText, categoryWithExpenses.expenses.sumOf { it.amount })
