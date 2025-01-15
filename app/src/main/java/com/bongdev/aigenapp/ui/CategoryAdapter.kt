@@ -28,7 +28,7 @@ class CategoryAdapter(
             val category = categoryWithExpenses.category
             binding.categoryName.text = category.name
             binding.categoryIcon.setImageResource(category.iconResId)
-            binding.categoryAmount.text = String.format("$%.2f", categoryWithExpenses.expenses.sumOf { it.amount })
+            binding.categoryAmount.text = String.format("₹%.2f", categoryWithExpenses.expenses.sumOf { it.amount })
             
             // Set progress
             val progress = if (category.budget > 0) {

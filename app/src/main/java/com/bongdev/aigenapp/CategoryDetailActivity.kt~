@@ -3,7 +3,6 @@ package com.bongdev.aigenapp
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.os.Bundle
-import android.view.animation.FastOutSlowInInterpolator
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +12,7 @@ import androidx.core.view.updatePadding
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bongdev.aigenapp.data.CategoryWithExpenses
 import com.bongdev.aigenapp.databinding.ActivityCategoryDetailBinding
 import com.bongdev.aigenapp.ui.ExpenseAdapter
 import com.bongdev.aigenapp.ui.MainViewModel
@@ -151,7 +151,6 @@ class CategoryDetailActivity : AppCompatActivity() {
             .start()
 
         // Animate FAB
-        binding.addExpenseFab.scale = 0f
         binding.addExpenseFab.animate()
             .scaleX(1f)
             .scaleY(1f)
